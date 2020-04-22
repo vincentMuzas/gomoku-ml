@@ -48,6 +48,8 @@ class game_engine:
 
                         return ("player {} win the game".format(self.player))
         self.player = (1, 2)[self.player == 1]
+        if (len(self.local_history) == 441):
+            return ("draw")
         return ("ok")
 
     def import_save_file(self):
