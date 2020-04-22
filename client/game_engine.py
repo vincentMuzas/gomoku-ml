@@ -1,10 +1,15 @@
 #!/usr/bin/python3.7
 
+import json
+
 class game_engine:
+
+    save_file = "history.json"
 
     def __init__(self):
         self.board = [[0 for x in range(21)] for y in range(21)]
-        self.last_move = None
+        self.history = json.loads(self.import_save_file())
+        self.local_history = {}
         self.test_directions = [
             [-1, -1], [-1, 0], [-1, +1],
             [0, -1], [0, +1],
@@ -18,7 +23,7 @@ class game_engine:
         if (self.board[posy][posx] != 0):
             raise Exception("invalid play: " + posx + " " + posy)
         
-        self.last_move = [posy, posx, self.player]
+        self.local_history[str(len(self.local_history))] = {"y": posy, "x": posx, "p": self.player}
         self.board[posy][posx] = self.player
         #test if the player win
         for direction in self.test_directions:
@@ -31,13 +36,36 @@ class game_engine:
                     if testx not in range(21) or testy not in range(21) or self.board[testy][testx] != self.player:
                         break
                     if (j == 4):
+                        index = 0
+                        for key in self.history:
+                            index = int(key) + 1
+                        self.history[str(index)] = self.local_history
+
+                        # Write the history in a file
+                        file = open(self.save_file, mode="w")
+                        file.write(json.dumps(self.history, sort_keys=True, indent=4, separators=(',',':')))
+                        file.close()
+
                         return ("player {} win the game".format(self.player))
         self.player = (1, 2)[self.player == 1]
         return ("ok")
 
+    def import_save_file(self):
+        try:
+            file = open(self.save_file, mode="r")
+            content = file.read()
+            content = (content, '{}')[len(content) == 0]
+            file.close()
+        except OSError:
+            #le fichier n'existe pas
+            content = '{}'
+        return (content)
 
     def get_board(self):
         return (self.board)
     
     def get_last_move(self):
-        return (self.get_last_move)
+        return (self.history[-1])
+    
+    def get_history(self):
+        return (self.history)
