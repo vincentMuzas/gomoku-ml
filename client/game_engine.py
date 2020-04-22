@@ -65,7 +65,7 @@ class game_engine:
         return (self.board)
     
     def get_last_move(self):
-        return (self.history[-1])
+        return (self.local_history[-1])
     
     def get_history(self):
-        return (self.history)
+        return (self.local_history)
