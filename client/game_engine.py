@@ -50,7 +50,7 @@ class game_engine:
         self.player = (1, 2)[self.player == 1]
         if (len(self.local_history) == 441):
             return ("draw")
-        return ("ok")
+        return (["ok", ("black", "white")[self.player == 1]])
 
     def import_save_file(self):
         try:

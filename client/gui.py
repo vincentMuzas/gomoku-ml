@@ -17,6 +17,14 @@ def reset_aspect_ratio(event):
 			x1 = x0 + object_size
 			y1 = y0 + object_size
 			board.coords(widgets[y * 21 + x], x0, y0, x1, y1)
+	
+	for pion in circles:
+		obj = board.gettags(pion)
+		x0 = int(obj[0]) * object_size
+		y0 = int(obj[1]) * object_size
+		x1 = x0 + object_size
+		y1 = y0 + object_size
+		board.coords(pion, x0, y0, x1, y1)
 
 def exit_program(event):
 	screen.destroy()
@@ -27,11 +35,23 @@ def get_item(event):
 	if (posx > 21 or posy > 21):
 		return
 	index = posy * 21 + posx
-	print(posx, posy)
-	try:
-		board.itemconfig(widgets[index], fill='black')
-	except:
-		pass
+	print(board.gettags(widgets[index]))
+	global circles
+	if (board.gettags(widgets[index])[0] != "played"):
+		result = engine.move(posy, posx)
+		if (result[0] != "ok"):
+			print(result)
+			exit()
+		else:
+			try:
+				board.itemconfig(widgets[index], tags="played")
+				draw_x = posx * object_size
+				draw_y = posy * object_size
+				circles.append(
+					board.create_oval(draw_x, draw_y, draw_x + object_size, draw_y + object_size,
+					fill=result[1], tags=[posx, posy]))
+			except:
+				pass
 
 	
 
@@ -49,6 +69,7 @@ if __name__ == "__main__":
 
 	screen.update_idletasks()
 	widgets = []
+	circles = []
 	object_size = board.winfo_height() / 21
 	for y in range(21):
 		for x in range(21):

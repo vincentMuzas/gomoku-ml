@@ -8,7 +8,7 @@ if __name__ == "__main__":
     game = game_engine()
 
     result = "ok"
-    while (result == "ok"):
+    while (result[0] == "ok"):
         play = input("player move:")
         if (play == "map"):
             for line in game.get_board():
