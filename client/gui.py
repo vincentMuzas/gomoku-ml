@@ -2,7 +2,6 @@
 
 import tkinter as tk
 from game_engine import game_engine
-from PIL import Image, ImageTk
 
 
 def reset_aspect_ratio(event):
