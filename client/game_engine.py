@@ -21,7 +21,7 @@ class game_engine:
         if (posy not in range(21) or posx not in range(21)):
             raise Exception("invalid position: " + posx + " " + posy)
         if (self.board[posy][posx] != 0):
-            raise Exception("invalid play: " + posx + " " + posy)
+            raise Exception("invalid play: " + str(posx) + " " + str(posy))
         
         self.local_history[str(len(self.local_history))] = {"y": posy, "x": posx, "p": self.player}
         self.board[posy][posx] = self.player
