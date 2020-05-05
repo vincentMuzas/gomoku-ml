@@ -29,7 +29,9 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
         except:
             return
 
-        global game, lock
+        global game, lock, barrier
+
+        barrier.wait()
 
         self.request.send(str(index).encode())
 
@@ -69,21 +71,12 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
-##
-## Exemple de connection client
-##
-def client(ip, port, message):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.connect((ip, port))
-        sock.sendall(bytes(message, 'ascii'))
-        response = str(sock.recv(1024), 'ascii')
-        print("Received: {}".format(response))
-
 if __name__ == "__main__":
 
     game = game_engine()
 
     lock = QLock()
+    barrier = threading.Barrier(2)
 
     HOST, PORT = "localhost", 0
 
