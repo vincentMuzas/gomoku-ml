@@ -2,15 +2,19 @@
 
 from game_engine import game_engine
 from QLock import QLock
+from time import sleep
 
 import socketserver, socket, threading, time
 
 class TCPRequestHandler(socketserver.BaseRequestHandler):
 
     clients = []
+    observers = []
 
     def setup(self):
-        if (len(self.clients) < 2):
+        if (len(self.clients) == 2):
+            self.observers.append(self.request)
+        else:
             self.clients.append(self.request)
         
 
@@ -18,18 +22,29 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
     def finish(self):
         try:
             self.clients.remove(self.request)
+            if (len(self.clients)):
+                self.clients[0].send("opponent left".encode())
         except:
-            return
-        if (len(self.clients)):
-            self.clients[0].send("opponent left".encode())
+            self.observers.remove(self.request)
 
     def handle(self):
+        global game, lock, barrier
+
+
         try:
             index = self.clients.index(self.request)
         except:
-            return
+            string = ""
+            for line in game.get_board():
+                for element in line:
+                    string += str(element)
+                string += '\n'
+            self.request.send(string.encode())
+            #noodle code
+            while (1):
+                if self.request.recv(1024).decode() == "":
+                    return
 
-        global game, lock, barrier
 
         barrier.wait()
 
@@ -66,6 +81,12 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 if (len(self.clients) > 1):
                     self.clients[not index].send((data + '\n').encode())
                 print("player %d played %s %s" % (index, x, y))
+
+                #envoi du move aux observers
+                for observer in self.observers:
+                    observer.send(("%d %s %s\n" % (index, x, y)).encode())
+
+
                 self.request.send("ok\n".encode())
                 if ("win the game" in result or "draw" in result):
                     self.clients[not index].send((result + '\n').encode())
