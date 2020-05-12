@@ -35,9 +35,17 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
 
         self.request.send(str(index).encode())
 
-        aquired = False
+        aquired = True
+        if (index == 0):
+            lock.acquire()
+        else:
+            while ( not lock.locked() ):
+                pass
+            lock.acquire()
         while 1:
             if (not aquired):
+                while ( not lock.locked() ):
+                    pass
                 lock.acquire()
                 aquired = True
             data = self.request.recv(1024).decode()
