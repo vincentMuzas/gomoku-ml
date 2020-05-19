@@ -70,6 +70,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 lock.acquire()
                 aquired = True
             data = self.request.recv(1024).decode()
+            print("data received:", data)
             if (not data):
                 lock.release()
                 break

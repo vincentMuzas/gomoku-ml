@@ -55,27 +55,36 @@ def random_games_data():
 			while (1):
 				x = random.randrange(0, 20)
 				y = random.randrange(0, 20)
-				if (map[y][x] != 0):
-					continue
+				if (map[y][x] == 0):
+					break
 			map[y][x] = (turn % 2) + 1
-			(sock1, sock2)[turn % 2].send("{} {}\n".format(x, y).encode())
-
+			if "{} {}\n".format(x, y).encode() == bytes("%d %d\n" % (x, y), 'ascii'):
+				print("NICE")
+			print("sending :", "{} {}\n".format(x, y).encode(), "by {}".format(("sock1", "sock2")[turn % 2]))
+			(sock1, sock2)[turn % 2].sendall(bytes("%d %d\n" % (x, y), 'ascii'))
+			print("send")
 			rep = (sock1, sock2)[turn % 2].recv(100)
-			if ("ok" not in rep):
+			print("received :", rep)
+			if (b"ok" not in rep):
 				sock1.close()
 				sock2.close()
 				break
-
-			rep = (sock1, sock2)[not (turn % 2)].recv(100)
+			print("waiting for server to respond to", "{}".format(("sock1", "sock2")[not (turn % 2)]))
+			rep = (sock1, sock2)[not (turn % 2)].recv(100).decode()
+			print("received :", rep)
 			try:
 				otherx, othery = rep.split(' ')
 			except:
+				print("EXCEPT")
 				sock1.close()
 				sock2.close()
+				break
 			if (int(otherx) != x and int(othery) != y):
+				print("BREAK IF")
 				sock1.close()
 				sock2.close()
 				break
 			turn += 1
+		print("end of global ready to start a new game")
 
 random_games_data()
