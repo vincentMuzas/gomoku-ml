@@ -26,6 +26,12 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 self.clients[0].send("opponent left".encode())
         except:
             self.observers.remove(self.request)
+        
+        global game
+        if (not len(self.clients)):
+            game = game_engine()
+        for observer in self.observers:
+            observer.send("reset\n".encode())
 
     def handle(self):
         global game, lock, barrier
@@ -102,14 +108,14 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 if __name__ == "__main__":
 
+    HOST, PORT = "localhost", 0
+    server = ThreadedTCPServer((HOST, PORT), TCPRequestHandler)
+
     game = game_engine()
 
     lock = QLock()
     barrier = threading.Barrier(2)
 
-    HOST, PORT = "localhost", 0
-
-    server = ThreadedTCPServer((HOST, PORT), TCPRequestHandler)
     with server:
         ip, port = server.server_address
         server_thread = threading.Thread(target=server.serve_forever)

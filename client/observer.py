@@ -35,6 +35,12 @@ def ListenSocket(socket):
 		line = socket.recv(1024).decode()
 		if (line == ""):
 			break
+		print(line)
+		if (line == "reset\n"):
+			for elem in circles:
+				board.delete(elem)
+			circles = []
+			continue
 		line = line.strip()
 		player, posx, posy = line.split(' ')
 		posx, posy = int(posx), int(posy)
@@ -45,7 +51,7 @@ def ListenSocket(socket):
 			fill=("white", "black")[int(player)], tags=[posx, posy])
 		)
 
-	
+
 
 if __name__ == "__main__":
 
