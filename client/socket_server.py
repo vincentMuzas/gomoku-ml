@@ -2,6 +2,7 @@
 
 from game_engine import game_engine
 from QLock import QLock
+from threading import Lock
 from time import sleep
 
 import socketserver, socket, threading, time
@@ -12,14 +13,19 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
     observers = []
 
     def setup(self):
+        global player_lock
+        player_lock.acquire()
         if (len(self.clients) == 2):
             self.observers.append(self.request)
         else:
             self.clients.append(self.request)
+        player_lock.release()
         
 
 
     def finish(self):
+        global player_lock
+        player_lock.acquire()
         try:
             self.clients.remove(self.request)
             if (len(self.clients)):
@@ -27,11 +33,13 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
         except:
             self.observers.remove(self.request)
         
-        global game
+        global game, barrier
         if (not len(self.clients)):
+            barrier = threading.Barrier(2)
             game = game_engine()
         for observer in self.observers:
             observer.send("reset\n".encode())
+        player_lock.release()
 
     def handle(self):
         global game, lock, barrier
@@ -70,10 +78,13 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 lock.acquire()
                 aquired = True
             data = self.request.recv(1024).decode()
+            if (data == "\n"):
+                continue
             if (not data):
                 lock.release()
                 break
             data = data.splitlines()[-1]
+            print(index, data, '|')
             if (data == "map"):
                 string = ""
                 for line in game.get_board():
@@ -114,6 +125,7 @@ if __name__ == "__main__":
     game = game_engine()
 
     lock = QLock()
+    player_lock = Lock()
     barrier = threading.Barrier(2)
 
     with server:
