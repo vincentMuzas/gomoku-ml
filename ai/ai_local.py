@@ -13,7 +13,7 @@ from game_engine import game_engine
 LR = 1e-3
 goal_steps = 441
 score_requirement = 1
-initial_games = 1000
+initial_games = 10000
 
 # Print iterations progress
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
@@ -55,7 +55,7 @@ def random_games_data():
 		if (not lauched):
 			input("press <enter> to start generating random data\n")
 			lauched = True
-		printProgressBar(episode, initial_games, suffix="%d/%d" % (episode, initial_games), length=50)
+		printProgressBar(episode + 1, initial_games, suffix="%d/%d" % (episode + 1, initial_games), length=50)
 
 		map = [[0 for x in range(21)] for y in range(21)]
 
@@ -95,8 +95,7 @@ def random_games_data():
 	np.save("saved_0.npy", training_data_save[0])
 	np.save("saved_1.npy", training_data_save[1])
 
-	
-	print('\naverage accepted score:', mean(accepted_scores[0]))
+	print('average accepted score:', mean(accepted_scores[0]))
 	print('median accepted score:', median(accepted_scores[0]))
 	print(Counter(accepted_scores[0]))
 
