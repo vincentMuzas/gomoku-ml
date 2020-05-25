@@ -2,18 +2,38 @@
 
 import random
 import socket
-import tflearn
-from tflearn.layers.core import input_data, dropout, fully_connected
-from tflearn.layers.estimator import regression
+from keras.engine.topology import Input
+from keras.engine.training import Model
+from keras.layers import add
+from keras.layers.convolutional import Conv2D
+from keras.layers.core import Activation, Dense, Flatten
+from keras.layers.normalization import BatchNormalization
+from keras.regularizers import l2
+from keras.optimizers import SGD
 from statistics import mean, median
 from collections import Counter
 import numpy as np
 from game_engine import game_engine
 
+
+# Learning rate
 LR = 1e-3
-goal_steps = 441
+
+board_size = 21
+
+# nombre de tours max par parties
+goal_steps = pow(board_size, 2)
+
+# score requis pour enregistrer la partie (1 = gagnant, 0 = perdant ou égalitée, max = goal_steps)
 score_requirement = 1
-initial_games = 10000
+
+# nombre de games a générer
+initial_games = 100
+
+white_stack = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(8)]
+black_stack = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(8)]
+black_play = [[True for _ in range(board_size)] for _ in range(board_size)]
+white_play = [[False for _ in range(board_size)] for _ in range(board_size)]
 
 # Print iterations progress
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
@@ -40,21 +60,27 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 def random_games_data():
 
 	lauched = False
-	training_data = [[], []]
-	scores = [[], []]
-	accepted_scores = [[], []]
+	training_data = []
+	scores = []
+	accepted_scores = []
 
 	for episode in range(initial_games):
 		## NOUVELLE PARTIE
 		engine = game_engine()
 
-		score = [0, 0]
-		game_memory = [[], []]
-		prev_observation = [[], []]
+
+		white_stack = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(8)]
+		black_stack = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(8)]
+
+		score = 0
+		game_memory = []
+		prev_observation = []
 
 		if (not lauched):
 			input("press <enter> to start generating random data\n")
 			lauched = True
+		
+		#nice progress bar
 		printProgressBar(episode + 1, initial_games, suffix="%d/%d" % (episode + 1, initial_games), length=50)
 
 		map = [[0 for x in range(21)] for y in range(21)]
@@ -68,38 +94,52 @@ def random_games_data():
 				x = random.randrange(0, 21)
 				y = random.randrange(0, 21)
 			
+			stack = (white_stack, black_stack)[player]
+			## copie de la derniere stack
+			curent_stack = [[0 for _ in range(board_size)] for _ in range(board_size)]
+			for a in range(board_size):
+				for b in range(board_size):
+					curent_stack[a][b] = stack[0][a][b]
+			## insert le dernier play
+			curent_stack[y][x] = True
+			## insert la current stack dans la stack
+			stack = stack[:-1].insert(0, curent_stack)
+			game_state = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(17)]
+			for layer in range(0, 8):
+				for a in range(board_size):
+					for b in range(board_size):
+						game_state[layer][a][b] = black_stack[layer][a][b]
+			for layer in range(0, 8):
+				for a in range(board_size):
+					for b in range(board_size):
+						game_state[layer + 8][a][b] = white_stack[layer][a][b]
+			game_state[16] = (white_play, black_play)[player]
+			game_memory.append(game_state)
+
 			try:
 				result = engine.move(y, x)
 			except:
 				break
 			if ("win the game" in result):
-				player = int(result.split()[1]) - 1
-				score[player] = goal_steps - turn
-				score[not player] = 0
+				score = goal_steps - turn
 				break
 			if (result is "draw"):
 				score = [0, 0]
 				break
 
-		for i, team_score in enumerate(score):
-			if (team_score >= score_requirement):
-				accepted_scores[i].append(team_score)
-				for data in game_memory[i]:
-					training_data[i].append(data)
+		if (score >= score_requirement):
+			accepted_scores.append(score)
+			training_data.append(game_memory)
+		scores.append(score)
 
-		scores[0].append(score[0])
-		scores[1].append(score[1])
+	print('average accepted score:', mean(accepted_scores))
+	print('median accepted score:', median(accepted_scores))
+	print(Counter(accepted_scores))
 
-	training_data_save = [np.array(training_data[0]), np.array(training_data[1])]
+	fd = open("training_data.txt", mode="w")
+	print(training_data, file=fd)
+	fd.close()
 
-	np.save("saved_0.npy", training_data_save[0])
-	np.save("saved_1.npy", training_data_save[1])
+	return (training_data)
 
-	print('average accepted score:', mean(accepted_scores[0]))
-	print('median accepted score:', median(accepted_scores[0]))
-	print(Counter(accepted_scores[0]))
-
-	return (training_data[0])
-
-random_games_data()
-
+training_data = random_games_data()
