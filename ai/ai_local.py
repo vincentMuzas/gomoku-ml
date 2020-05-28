@@ -14,6 +14,7 @@ from statistics import mean, median
 from collections import Counter
 import numpy as np
 from game_engine import game_engine
+import json
 
 
 # Learning rate
@@ -28,7 +29,7 @@ goal_steps = pow(board_size, 2)
 score_requirement = 1
 
 # nombre de games a générer
-initial_games = 100
+initial_games = 1
 
 white_stack = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(8)]
 black_stack = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(8)]
@@ -96,14 +97,19 @@ def random_games_data():
 			
 			stack = (white_stack, black_stack)[player]
 			## copie de la derniere stack
-			curent_stack = [[0 for _ in range(board_size)] for _ in range(board_size)]
-			for a in range(board_size):
-				for b in range(board_size):
-					curent_stack[a][b] = stack[0][a][b]
+			curent_stack = [[False for _ in range(board_size)] for _ in range(board_size)]
+			for a, col in enumerate(stack[0]):
+				for b, item in enumerate(col):
+					curent_stack[a][b] = item
 			## insert le dernier play
 			curent_stack[y][x] = True
 			## insert la current stack dans la stack
-			stack = stack[:-1].insert(0, curent_stack)
+			stack = stack[1:]
+			stack.insert(0, curent_stack)
+			if (player == 0):
+				white_stack = stack
+			else:
+				black_stack = stack
 			game_state = [[[False for _ in range(board_size)] for _ in range(board_size)] for _ in range(17)]
 			for layer in range(0, 8):
 				for a in range(board_size):
@@ -137,7 +143,7 @@ def random_games_data():
 	print(Counter(accepted_scores))
 
 	fd = open("training_data.txt", mode="w")
-	print(training_data, file=fd)
+	print(json.dumps(training_data), file=fd)
 	fd.close()
 
 	return (training_data)
